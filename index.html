@@ -70,11 +70,11 @@
             }
 
             .title-bold {
-                font-weight: bold; 
+                font-weight: bold;
                 font-size: 44px;
             }
             .title-light {
-                font-weight: 300; 
+                font-weight: 300;
                 color: #555;
                 font-size: 44px;
             }
@@ -217,7 +217,7 @@ function refreshTrackData(callback) {
                     callback();
                 // });
             });
-        }); 
+        });
     }
 }
 
@@ -312,13 +312,13 @@ function download(filename, text) {
 
 function readFile(evt) {
     //Retrieve the first (and only!) File from the FileList object
-    var f = evt.target.files[0]; 
+    var f = evt.target.files[0];
 
     if (f) {
         $('#fileName').html(f.name);
 
         var r = new FileReader();
-        r.onload = function(e) { 
+        r.onload = function(e) {
             var json = e.target.result;
 
             importColl = JSON.parse(json);
@@ -330,7 +330,7 @@ function readFile(evt) {
             compareEverything();
         }
         r.readAsText(f);
-    } else { 
+    } else {
       alert("Failed to load file");
     }
 }
@@ -375,12 +375,12 @@ function compareEverything() {
         globalStep = "Uploading";
         if (typeof importColl !== 'undefined') {
 
-            playlistTotal = collPlaylistCount(importColl);            
+            playlistTotal = collPlaylistCount(importColl);
 
             // TONOTDO:compare starred -> can not really do that since there is no api to manipulate those
             // instead we just create a replacement-standard-list
             globalStep = "Comparing starred tracks";
-            
+
             makeSureImportedStarredExists(function (proceed) {
                 if (importColl.starred && importColl.starred.length > 0) {
                     compareUriTracks(importColl.starred, collections.starred, addToStarred);
@@ -459,7 +459,7 @@ function makeSurePlaylistExists(name, callback) {
         headers: {
         'Authorization': 'Bearer ' + token
         },
-        success: function(response) {         
+        success: function(response) {
             // alert(JSON.stringify(response));
             collections.playlists[response.name] = {
                 name: response.name,
@@ -520,7 +520,7 @@ function handlePlaylistRequestsWithTimeout(arr, callback) {
 function handlePlaylistRequests(arr, callback) {
     var url = arr.pop();
     if (url) {
-        trackStep += 1;   
+        trackStep += 1;
         $.ajax({
             method: "POST",
             url: url,
@@ -528,7 +528,7 @@ function handlePlaylistRequests(arr, callback) {
             headers: {
             'Authorization': 'Bearer ' + token
             },
-            success: function(response) {      
+            success: function(response) {
                 // collections.playlists[response.name] = {
                 //     id: response.id,
                 //     uri: response.uri
@@ -598,8 +598,8 @@ function bindControls() {
     $('#btnExport').click(function () {
         var json = JSON.stringify(collections);
         var d = new Date();
-        var time = '@' + d.getFullYear() + '_' + (d.getMonth() + 1) + '_' + d.getDate();
-        download(name+time+'.json', json);
+        var time = d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+        download('spotify--' + name + '-' + time + '.json', json);
     });
     $('#fileImport').change(readFile);
 }
@@ -612,7 +612,7 @@ function handleAuth(accessToken) {
         headers: {
         'Authorization': 'Bearer ' + accessToken
         },
-        success: function(response) {         
+        success: function(response) {
             var user_id = response.id.toLowerCase();
             userId = user_id;
             name = user_id;
@@ -620,7 +620,7 @@ function handleAuth(accessToken) {
             $('#userName').html(name);
             $('#pnlLoggedOut').hide();
 
-            refreshTrackData(function () {                   
+            refreshTrackData(function () {
                 $('#pnlAction').show();
             });
         }
@@ -647,13 +647,13 @@ function refreshMyMusicTracks(callback) {
 //         headers: {
 //             'Authorization': 'Bearer ' + token
 //         },
-//         success: function(data) {         
+//         success: function(data) {
 //             if (!data) return;
 //             if ('tracks' in data) {
 //                 loadTrackChunks(data.tracks.href, arr, callback);
 //             } else {
 //                 callback();
-//             }                
+//             }
 //         }
 //     });
 // }
@@ -672,11 +672,19 @@ function loadTrackChunks(url, arr, callback) {
             if (!data) return;
             if ('items' in data) {
                 $.each(data.items, function (index, value) {
+                    var artists = "";
+                    $.each(value.track.artists, function (i, artist) {
+                      if(i > 0) { artists = artists + ", "; }
+                      artists = artists + artist.name;
+                    });
+
+                    var full_name = value.track.name + ' by ' + artists + ' from ' + value.track.album.name;
+
                     if(value.track !== null){
-                        arr.push({ id: value.track.id, uri: value.track.uri });    
+                        arr.push({ fullname: full_name, id: value.track.id, uri: value.track.uri, name: value.track.name, artists: artists, album: value.track.album.name });
                     }else{
                         console.log("track is null", value);
-                    }                    
+                    }
                 });
             } else {
                 arr.push({ id: data.track.id, uri: data.track.uri });
